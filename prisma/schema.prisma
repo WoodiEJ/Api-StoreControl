@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum Role {
+  admin
+  super_admin
+  store
+}
+
+enum StatusStore {
+  approved
+  inactive
+}
+
+enum StatusProduct {
+  active
+  inactive
+}
+
+enum StatusRequest {
+  pending
+  approved
+  rejected
+}
+
+model User {
+  id                  Int @id @default(autoincrement())
+  name                String
+  email               String @unique
+  password            String
+  role                Role
+  status              Boolean @default(true)
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+  stores              Store[]
+}
+
+model Store {
+  id              Int @id @default(autoincrement())
+  user_id         Int
+  cnpj            String @unique
+  name            String
+  category        String
+  status          StatusStore @default(inactive)
+  country         String
+  state           String
+  city            String
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+  user_store      User  @relation(fields: [user_id], references: [id])
+  products        Product[]
+}
+
+model Product {
+  id                Int @id @default(autoincrement())
+  store_id          Int
+  name              String
+  category          String
+  cost_price        Decimal @db.Decimal(10, 2)
+  sale_price        Decimal @db.Decimal(10, 2)
+  status            StatusProduct @default(active)
+  quantity          Int
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+  store             Store @relation(fields: [store_id], references: [id])
+}
+
+model Request {
+  id                Int @id @default(autoincrement())
+  status            StatusRequest @default(pending)
+  name              String
+  email             String
+  cnpj              String
+  category          String
+  country           String
+  state             String
+  city              String
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+}
