@@ -1,29 +1,5 @@
 import { Request, Response } from "express";
-import * as z from 'zod'
-import { StatusRequest } from "../../generated/prisma/enums";
 import { prisma } from "../../lib/prisma";
-
-const schema = z.object({
-    status: z.nativeEnum(StatusRequest),
-    name: z.string(),
-    email: z.string().email(),
-    cnpj: z.string(),
-    category: z.string(),
-    country: z.string(),
-    state: z.string(),
-    city: z.string()
-}).required()
-
-const schemaOptional = z.object({
-    status: z.nativeEnum(StatusRequest),
-    name: z.string(),
-    email: z.string().email(),
-    cnpj: z.string(),
-    category: z.string(),
-    country: z.string(),
-    state: z.string(),
-    city: z.string()
-}).partial()
 
 export async function listarSolicitacoes(req: Request, res: Response) {
     try {
@@ -70,6 +46,96 @@ export async function procurarSolicitacao(req: Request, res: Response) {
         return res.status(500).json({
             success: false,
             mensagem: "Erro ao procurar a solicitação"
+        })
+    }
+}
+
+export async function rejeitarSolicitacao(req: Request, res: Response) {
+    try {
+        const id = Number(req.params.id)
+        const solicitacao = await prisma.request.findUnique({where: {id}})
+
+        if (!solicitacao) {
+            return res.status(404).json({
+                success: false,
+                mensagem: "Nenhuma solicitação encontrada."
+            })
+        }
+
+        await prisma.request.update({
+            where: {id: id},
+            data: {
+                status: "rejected"
+            }
+        })
+
+        return res.status(200).json({
+            success: true,
+            mensagem: "A solicitação foi rejeitado com sucesso."
+        })
+    } catch (erro) {
+        console.error("Erro interno: ", erro)
+        return res.status(500).json({
+            success: false,
+            mensagem: "Erro ao rejeitar a solicitação."
+        })
+    }
+}
+
+export async function aceitarSolicitacao(req: Request, res: Response) {
+     try {
+        const id = Number(req.params.id)
+        const solicitacao = await prisma.request.findUnique({where: {id}})
+
+        if (!solicitacao) {
+            return res.status(404).json({
+                success: false,
+                mensagem: "Nenhuma solicitação encontrada."
+            })
+        }
+
+        await prisma.request.update({
+            where: {id: id},
+            data: {
+                status: "approved"
+            }
+        })
+
+        return res.status(200).json({
+            success: true,
+            mensagem: "A solicitação foi aprovado com sucesso."
+        })
+    } catch (erro) {
+        console.error("Erro interno: ", erro)
+        return res.status(500).json({
+            success: false,
+            mensagem: "Erro ao aprovar a solicitação."
+        })
+    }
+}
+
+export async function deletarSolicitacao(req: Request, res: Response) {
+    try {
+        const id = Number(req.params.id)
+        const solicitacao = await prisma.request.findUnique({where: {id}})
+
+        if (!solicitacao) {
+            return res.status(404).json({
+                success: false,
+                mensagem: "Nenhuma solicitação encontrada."
+            })
+        }
+
+        await prisma.request.delete({where: {id}})
+        return res.status(200).json({
+            success: true,
+            mensagem: "Solicitação deletado com sucesso."
+        })
+    } catch (erro) {
+        console.error("Erro interno: ", erro)
+        return res.status(500).json({
+            success: false,
+            mensagem: "Erro ao aprovar a solicitação."
         })
     }
 }
