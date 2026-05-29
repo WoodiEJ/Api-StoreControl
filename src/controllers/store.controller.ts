@@ -5,8 +5,8 @@ import { prisma } from "../../lib/prisma";
 
 const schema = z.object({
     user_id: z.number(),
-    cnpj: z.string(),
-    name: z.string(),
+    cnpj: z.string().min(14),
+    name: z.string().min(6),
     category: z.string(),
     status: z.nativeEnum(StatusStore),
     country: z.string(),
@@ -25,7 +25,7 @@ const schemaOptional = z.object({
     city: z.string()
 }).partial()
 
-export async function listarLojas(res: Response) {
+export async function listarLojas(req: Request, res: Response) {
     try {
         const lojas = await prisma.store.findMany()
 
@@ -76,7 +76,6 @@ export async function procurarLoja(req: Request, res: Response) {
 
 export async function criarLoja(req: Request, res: Response) {
     try {
-        
         const result = schema.safeParse(req.body)
 
         if (!result.success) {
@@ -134,6 +133,11 @@ export async function criarLoja(req: Request, res: Response) {
                 city: city
             }
         })
+
+        return res.status(200).json({
+            success: true,
+            mensagem: "Loja criada com sucesso"
+        })
     } catch (erro) {
         console.error("Erro interno: ", erro)
         return res.status(500).json({
@@ -189,7 +193,8 @@ export async function deletarLoja(req: Request, res: Response) {
 
         if (!loja) {
             return res.status(404).json({
-                success: false
+                success: false,
+                mensagem: "A loja não existe."
             })
         }
 

@@ -21,16 +21,16 @@ router.delete('/produtos/:id', authMiddleware, storeMiddleware, deletarProduto)
 
 // Rotas lojas
 router.get('/lojas', authMiddleware, adminQualquerLiberado, listarLojas)
-router.get('lojas/:id', authMiddleware, adminQualquerLiberado, procurarLoja)
-router.post('lojas/registrar', authMiddleware, storeMiddleware, criarLoja)
-router.put('/lojas/atualizar', authMiddleware, superadminMiddleware, atualizarLoja)
-router.delete('/lojas/deletar', authMiddleware, superadminMiddleware, deletarLoja)
+router.get('/lojas/:id', authMiddleware, adminQualquerLiberado, procurarLoja)
+router.post('/lojas/registrar', authMiddleware, storeMiddleware, criarLoja)
+router.put('/lojas/atualizar/:id', authMiddleware, superadminMiddleware, atualizarLoja)
+router.delete('/lojas/deletar/:id', authMiddleware, superadminMiddleware, deletarLoja)
 
 // Rotas solicitações
 router.get('/solicitacoes', authMiddleware, adminQualquerLiberado, listarSolicitacoes)
 router.get('/solicitacoes/:id', authMiddleware, adminQualquerLiberado, procurarSolicitacao)
-router.patch('/solicitacoes/:id', authMiddleware, adminQualquerLiberado, aceitarSolicitacao)
-router.patch('/solicitacoes/:id', authMiddleware, adminQualquerLiberado, rejeitarSolicitacao)
+router.patch('/solicitacoes/aprovar/:id', authMiddleware, adminQualquerLiberado, aceitarSolicitacao)
+router.patch('/solicitacoes/reprovar/:id', authMiddleware, adminQualquerLiberado, rejeitarSolicitacao)
 router.delete('/solicitacoes/:id', authMiddleware, adminQualquerLiberado, deletarSolicitacao)
 
 // Rotas usuarios
@@ -39,7 +39,7 @@ router.get('/admins', authMiddleware, superadminMiddleware, listarAdmins)
 router.get('/usuarios/:id', authMiddleware, superadminMiddleware, procurarUsuario)
 router.post('/admins/criar', authMiddleware, superadminMiddleware, criarUsuario)
 router.put('/usuarios/:id', authMiddleware, superadminMiddleware, atualizarUsuario)
-router.delete('/usuarios/deletar', authMiddleware, superadminMiddleware, deletarUsuario)
+router.delete('/usuarios/deletar/:id', authMiddleware, superadminMiddleware, deletarUsuario)
 
 // Login
 router.post('/login', login)
