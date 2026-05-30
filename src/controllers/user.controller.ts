@@ -9,7 +9,6 @@ const schema = z
     name: z.string(),
     email: z.string().email(),
     password: z.string().min(6),
-    role: z.nativeEnum(Role),
     status: z.boolean(),
   })
   .required();
@@ -92,7 +91,7 @@ export async function procurarUsuario(req: Request, res: Response) {
   }
 }
 
-export async function criarUsuario(req: Request, res: Response) {
+export async function createAdminUser(req: Request, res: Response) {
   try {
     const result = schema.safeParse(req.body);
 
@@ -103,7 +102,7 @@ export async function criarUsuario(req: Request, res: Response) {
       });
     }
 
-    const { name, email, password, role, status } = result.data;
+    const { name, email, password, status } = result.data;
     const usuarioExiste = await prisma.user.findFirst({
       where: { email: result.data.email },
     });
@@ -111,7 +110,7 @@ export async function criarUsuario(req: Request, res: Response) {
     if (usuarioExiste) {
       return res.status(400).json({
         success: false,
-        mensagem: "Usuario já existe.",
+        mensagem: "Admin já existe.",
       });
     }
 
@@ -122,7 +121,7 @@ export async function criarUsuario(req: Request, res: Response) {
         name,
         email,
         password: chaveCriptografada,
-        role,
+        role: "admin",
         status,
       },
     });
@@ -137,6 +136,66 @@ export async function criarUsuario(req: Request, res: Response) {
       success: false,
       mensagem: "Erro ao criar usuario.",
     });
+  }
+}
+
+export async function createUserStore(req: Request, res: Response) {
+  try {
+    const id = Number(req.params.id)
+    const request = await prisma.request.findFirst({where: {id}})
+
+    if (!request) {
+      return res.status(404).json({
+        success: false,
+        message: "Nenhuma solicitação encontrada."
+      })
+    }
+
+    const ifUserExist = await prisma.user.findUnique({
+      where: {
+        email: request.email
+      }
+    })
+
+    if (ifUserExist) {
+      return res.status(400).json({
+        success: false,
+        message: "Usuário já existe."
+      })
+    }
+
+    const passwordCript = await bcrypt.hash("novalojacadastro123", 10)
+
+    await prisma.user.create({
+      data: {
+        name: request.name,
+        email: request.email,
+        password: passwordCript,
+        role: "store",
+        store: {
+          create: {
+            cnpj: request.cnpj,
+            name: request.name,
+            category: request.category,
+            status: "approved",
+            country: request.country,
+            state: request.state,
+            city: request.city
+          }
+        }
+      },
+    })
+
+    return res.status(201).json({
+      success: true,
+      message: "Usuário e loja criado com sucesso."
+    })
+  } catch (erro) {
+    console.error("Erro interno: ", erro)
+    return res.status(500).json({
+      success: false, 
+      mensagem: "Erro ao criar o user store"
+    })
   }
 }
 
@@ -196,19 +255,20 @@ export async function deletarUsuario(req: Request, res: Response) {
       });
     }
 
-    await prisma.product.deleteMany({
+    const deletedStore = prisma.store.deleteMany({
+      where: {userId: id}
+    })
+    const deletedProducts = prisma.product.deleteMany({
       where: {
         store: {
-          user_id: id,
-        },
-      },
-    });
-    await prisma.store.deleteMany({
-      where: {
-        user_id: id,
-      },
-    });
-    await prisma.user.delete({ where: { id } });
+          userId: id
+        }
+      }
+    })
+    const deletedUser = prisma.user.delete({where: {id}})
+
+    await prisma.$transaction([deletedProducts, deletedStore, deletedUser])
+
     return res.status(200).json({
       success: true,
       mensagem: "Usuario deletado com sucesso.",

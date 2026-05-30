@@ -4,7 +4,7 @@ import { StatusStore } from "../../generated/prisma/enums";
 import { prisma } from "../../lib/prisma";
 
 const schema = z.object({
-    user_id: z.number(),
+    userId: z.number(),
     cnpj: z.string().min(14),
     name: z.string().min(6),
     category: z.string(),
@@ -15,7 +15,7 @@ const schema = z.object({
 }).required()
 
 const schemaOptional = z.object({
-    user_id: z.number(),
+    userId: z.number(),
     cnpj: z.string(),
     name: z.string(),
     category: z.string(),
@@ -52,7 +52,7 @@ export async function listarLojas(req: Request, res: Response) {
 export async function procurarLoja(req: Request, res: Response) {
     try {
         const id = Number(req.params.id)
-        const loja = await prisma.store.findUnique({where: {id}})
+        const loja = await prisma.store.findUnique({ where: { id } })
 
         if (!loja) {
             return res.status(404).json({
@@ -85,7 +85,7 @@ export async function criarLoja(req: Request, res: Response) {
             })
         }
 
-        const {user_id, cnpj, name, category, status, country, state, city} = result.data
+        const { userId, cnpj, name, category, status, country, state, city } = result.data
         const lojaExiste = await prisma.store.findFirst({
             where: {
                 cnpj: result.data.cnpj
@@ -101,7 +101,7 @@ export async function criarLoja(req: Request, res: Response) {
 
         await prisma.store.create({
             data: {
-                user_id,
+                userId,
                 cnpj,
                 name,
                 category,
@@ -112,14 +112,14 @@ export async function criarLoja(req: Request, res: Response) {
             }
         })
 
-        const usuario = await prisma.user.findUnique({where: {id: user_id}})
+        const usuario = await prisma.user.findUnique({ where: { id: userId } })
 
         if (!usuario) {
             return res.status(404).json({
                 success: false,
                 mensagem: "Usuario não encontrado."
             })
-        }        
+        }
 
         await prisma.request.create({
             data: {
@@ -150,7 +150,7 @@ export async function criarLoja(req: Request, res: Response) {
 export async function atualizarLoja(req: Request, res: Response) {
     try {
         const id = Number(req.params.id)
-        const loja = await prisma.store.findUnique({where: {id}})
+        const loja = await prisma.store.findUnique({ where: { id } })
 
         if (!loja) {
             return res.status(404).json({
@@ -169,12 +169,12 @@ export async function atualizarLoja(req: Request, res: Response) {
         }
 
         await prisma.store.update({
-            where: {id},
+            where: { id },
             data: result.data
         })
 
         return res.status(200).json({
-            success: true, 
+            success: true,
             mensagem: "Loja atualizado com sucesso."
         })
     } catch (erro) {
@@ -189,7 +189,7 @@ export async function atualizarLoja(req: Request, res: Response) {
 export async function deletarLoja(req: Request, res: Response) {
     try {
         const id = Number(req.params.id)
-        const loja = prisma.store.findUnique({where: {id}})
+        const loja = prisma.store.findUnique({ where: { id } })
 
         if (!loja) {
             return res.status(404).json({
@@ -198,12 +198,18 @@ export async function deletarLoja(req: Request, res: Response) {
             })
         }
 
-        await prisma.product.deleteMany({
+        const deletedStore = prisma.store.deleteMany({
+            where: { userId: id }
+        })
+        const deletedProducts = prisma.product.deleteMany({
             where: {
-                store_id: id
+                store: {
+                    userId: id
+                }
             }
         })
-        await prisma.store.delete({where: {id}})
+
+        await prisma.$transaction([deletedProducts, deletedStore])
 
         return res.status(200).json({
             success: true,
